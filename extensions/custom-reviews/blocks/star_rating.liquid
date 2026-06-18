@@ -1,0 +1,86 @@
+{% comment %}
+  Bloco de teste — renderiza dois reviews fixos (puxados manualmente via connector.js)
+  diretamente na página de produto, com layout 100% próprio.
+  Objetivo único desta etapa: provar que o Theme App Extension consegue
+  renderizar HTML/CSS livre na PDP real, sem depender do widget do Judge.me.
+
+  Nota: os dados estão hard-coded aqui de propósito, sem loop sobre JSON.
+  O Liquid do Shopify não tem um filtro nativo para parsear JSON arbitrário
+  em array — quando ligarmos dados reais, eles virão via fetch em JS para
+  o nosso backend, não por aqui.
+{% endcomment %}
+
+<div class="custom-reviews">
+  <h3 class="custom-reviews__heading">Avaliações de clientes</h3>
+  <div class="custom-reviews__grid">
+    <div class="custom-reviews__card">
+      <div class="custom-reviews__stars" aria-label="5 de 5 estrelas">
+        {% for i in (1..5) %}
+          <span class="custom-reviews__star is-filled">★</span>
+        {% endfor %}
+      </div>
+      <p class="custom-reviews__body">a</p>
+      <p class="custom-reviews__author">Susana Lima</p>
+    </div>
+
+    <div class="custom-reviews__card">
+      <div class="custom-reviews__stars" aria-label="5 de 5 estrelas">
+        {% for i in (1..5) %}
+          <span class="custom-reviews__star is-filled">★</span>
+        {% endfor %}
+      </div>
+      <p class="custom-reviews__body">Perfect!</p>
+      <p class="custom-reviews__author">Susana Lima</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .custom-reviews {
+    padding: 24px 0;
+    font-family: inherit;
+  }
+  .custom-reviews__heading {
+    font-size: 18px;
+    margin: 0 0 16px;
+  }
+  .custom-reviews__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .custom-reviews__card {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .custom-reviews__stars {
+    color: rgba(0, 0, 0, 0.2);
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+  .custom-reviews__star.is-filled {
+    color: #1a1a1a;
+  }
+  .custom-reviews__title {
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  .custom-reviews__body {
+    margin: 0 0 8px;
+    line-height: 1.5;
+  }
+  .custom-reviews__author {
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.6);
+    margin: 0;
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Custom Reviews ",
+  "target": "section",
+  "settings": []
+}
+{% endschema %}
