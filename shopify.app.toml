@@ -51,7 +51,7 @@ type = "metaobject_reference<$app:faq>"
 extensions_summary = "Read FAQ entries stored in the app"
 
 [app_proxy]
-url = "https://cold-vienna-serial-dig.trycloudflare.com"
+url = "https://reviews-api-production-10bf.up.railway.app"
 subpath = "reviews"
 prefix = "apps" 
  

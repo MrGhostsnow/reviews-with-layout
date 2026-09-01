@@ -2,7 +2,7 @@
 // tunnel (`cloudflared tunnel --url http://localhost:3001`). This hostname is
 // regenerated every time that tunnel restarts — re-sync it when that happens,
 // and swap it for a stable production URL before shipping.
-export const API_BASE_URL = 'https://cold-vienna-serial-dig.trycloudflare.com'; 
+export const API_BASE_URL = 'https://reviews-api-production-10bf.up.railway.app'; 
 
 // This is a ui_extension (admin.app.home.render), not a classic embedded app,
 // so there's no @shopify/app-bridge here — shopify.auth.idToken() is the
