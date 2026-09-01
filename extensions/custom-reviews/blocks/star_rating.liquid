@@ -1,116 +1,399 @@
 {% comment %}
-  Custom Reviews Block — v2
+  Custom Reviews Block — v3
   Fetches reviews from the app's own backend (Remix route /api/reviews)
-  and renders them using 100% custom HTML/CSS, with no Judge.me widget involved.
+  and renders them using 100% custom HTML/CSS, with no external widget or
+  library involved.
 
-  The block renders a loading skeleton first, then replaces it with real data
-  once the fetch resolves. If the request fails, a neutral fallback message
-  is shown instead of a broken UI.
+  Supports three layouts (grid, carousel, list) driven by theme editor
+  settings. Carousel and list are Pro-only: if the backend reports
+  upgradeRequired, an upgrade banner is shown and the grid layout is
+  rendered as a fallback instead.
 {% endcomment %}
 
-<div id="custom-reviews-{{ block.id }}" class="custom-reviews">
-  <h3 class="custom-reviews__heading">Customer Reviews</h3>
+<div
+  id="custom-reviews-{{ block.id }}"
+  class="cr-container"
+  data-template="{{ block.settings.template }}"
+  data-count="{{ block.settings.reviews_count }}"
+  data-sort="{{ block.settings.sort_order }}"
+  data-star-color="{{ block.settings.star_color }}"
+  data-card-bg="{{ block.settings.card_background }}"
+  data-card-border="{{ block.settings.card_border_color }}"
+  data-text-color="{{ block.settings.text_color }}"
+  data-proxy-url="{{ shop.url }}/apps/reviews"
+>
+  <h3 class="cr-heading">Customer Reviews</h3>
 
-  <div class="custom-reviews__grid custom-reviews__skeleton" aria-hidden="true">
-    <div class="custom-reviews__card custom-reviews__card--skeleton"></div>
-    <div class="custom-reviews__card custom-reviews__card--skeleton"></div>
+  <div class="cr-banner" hidden></div>
+
+  <div class="cr-content">
+    <div class="cr-grid cr-skeleton" aria-hidden="true">
+      <div class="cr-card cr-card--skeleton"></div>
+      <div class="cr-card cr-card--skeleton"></div>
+      <div class="cr-card cr-card--skeleton"></div>
+    </div>
   </div>
 </div>
 
 <style>
-  .custom-reviews {
+  .cr-container {
     padding: 24px 0;
     font-family: inherit;
+    --cr-star-color: #1a1a1a;
+    --cr-card-bg: #ffffff;
+    --cr-card-border: #e5e5e5;
+    --cr-text-color: #1a1a1a;
   }
-  .custom-reviews__heading {
+
+  .cr-heading {
     font-size: 18px;
     margin: 0 0 16px;
+    color: var(--cr-text-color);
   }
-  .custom-reviews__grid {
+
+  .cr-banner {
+    background: #fff7e6;
+    border: 1px solid #f0c36d;
+    color: #7a5c00;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .cr-banner[hidden] {
+    display: none;
+  }
+
+  /* Grid layout */
+  .cr-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 16px;
   }
-  .custom-reviews__card {
-    border: 1px solid rgba(0, 0, 0, 0.1);
+
+  /* Carousel layout */
+  .cr-carousel-wrap {
+    position: relative;
+  }
+  .cr-carousel-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .cr-carousel-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--cr-card-border);
+    background: var(--cr-card-bg);
+    color: var(--cr-text-color);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .cr-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 16px;
+    padding-bottom: 4px;
+  }
+  .cr-card--carousel {
+    flex: 0 0 280px;
+    scroll-snap-align: start;
+  }
+
+  /* List layout */
+  .cr-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cr-list-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    border: 1px solid var(--cr-card-border);
+    background: var(--cr-card-bg);
     border-radius: 12px;
     padding: 16px;
   }
-  .custom-reviews__card--skeleton {
+  .cr-list-row__stars {
+    flex: 0 0 auto;
+  }
+  .cr-list-row__content {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .cr-list-row__body {
+    margin: 0 0 8px;
+    line-height: 1.5;
+    color: var(--cr-text-color);
+    white-space: normal;
+  }
+  .cr-list-row__author {
+    font-size: 13px;
+    color: var(--cr-text-color);
+    opacity: 0.6;
+    margin: 0;
+  }
+
+  /* Card */
+  .cr-card {
+    border: 1px solid var(--cr-card-border);
+    background: var(--cr-card-bg);
+    color: var(--cr-text-color);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .cr-card--skeleton {
     min-height: 100px;
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
-    animation: shimmer 1.4s infinite;
+    animation: cr-shimmer 1.4s infinite;
     border: none;
   }
-  @keyframes shimmer {
+  @keyframes cr-shimmer {
     0%   { background-position: 200% 0; }
     100% { background-position: -200% 0; }
   }
-  .custom-reviews__stars {
-    color: rgba(0, 0, 0, 0.2);
-    font-size: 16px;
+
+  .cr-stars {
+    display: inline-block;
     margin-bottom: 8px;
+    font-size: 16px;
   }
-  .custom-reviews__star--filled {
-    color: #1a1a1a;
+  .cr-star {
+    color: var(--cr-star-color);
   }
-  .custom-reviews__body {
+  .cr-star--empty {
+    opacity: 0.2;
+  }
+
+  .cr-body {
     margin: 0 0 8px;
     line-height: 1.5;
   }
-  .custom-reviews__author {
+  .cr-author {
     font-size: 13px;
-    color: rgba(0, 0, 0, 0.6);
+    opacity: 0.6;
     margin: 0;
   }
-  .custom-reviews__empty {
-    color: rgba(0, 0, 0, 0.5);
+
+  .cr-empty {
+    color: var(--cr-text-color);
+    opacity: 0.6;
     font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    .cr-grid {
+      grid-template-columns: 1fr;
+    }
+    .cr-list-row {
+      flex-direction: column;
+    }
   }
 </style>
 
 <script>
   (function () {
-    const container = document.getElementById("custom-reviews-{{ block.id }}");
-    const grid = container.querySelector(".custom-reviews__grid");
+    var container = document.getElementById("custom-reviews-{{ block.id }}");
+    if (!container) return;
 
-    // TODO: replace this hardcoded origin with an App Proxy URL before going live.
-    // Using the dev tunnel URL is fine for local testing only.
-    const API_URL = "{{ shop.url }}/apps/reviews/api/reviews";
+    var banner = container.querySelector(".cr-banner");
+    var content = container.querySelector(".cr-content");
+
+    var settings = {
+      template: container.dataset.template,
+      count: container.dataset.count,
+      sort: container.dataset.sort,
+      starColor: container.dataset.starColor,
+      cardBg: container.dataset.cardBg,
+      cardBorder: container.dataset.cardBorder,
+      textColor: container.dataset.textColor,
+      proxyUrl: container.dataset.proxyUrl
+    };
+
+    container.style.setProperty("--cr-star-color", settings.starColor);
+    container.style.setProperty("--cr-card-bg", settings.cardBg);
+    container.style.setProperty("--cr-card-border", settings.cardBorder);
+    container.style.setProperty("--cr-text-color", settings.textColor);
 
     function buildStars(rating) {
-      return Array.from({ length: 5 }, (_, i) => {
-        const filled = i < rating ? ' custom-reviews__star--filled' : '';
-        return `<span class="custom-reviews__star${filled}" aria-hidden="true">★</span>`;
-      }).join('');
+      var wrap = document.createElement("span");
+      wrap.className = "cr-stars";
+      wrap.setAttribute("aria-label", rating + " out of 5 stars");
+
+      for (var i = 0; i < 5; i++) {
+        var star = document.createElement("span");
+        star.className = "cr-star" + (i < rating ? "" : " cr-star--empty");
+        star.setAttribute("aria-hidden", "true");
+        star.textContent = "★";
+        wrap.appendChild(star);
+      }
+
+      return wrap;
     }
 
-    function renderReviews(reviews) {
+    function buildCard(review) {
+      var card = document.createElement("div");
+      card.className = "cr-card";
+      card.appendChild(buildStars(review.rating));
+
+      var body = document.createElement("p");
+      body.className = "cr-body";
+      body.textContent = review.body || "";
+      card.appendChild(body);
+
+      var author = document.createElement("p");
+      author.className = "cr-author";
+      author.textContent = review.reviewerName || "Anonymous";
+      card.appendChild(author);
+
+      return card;
+    }
+
+    function renderGrid(target, reviews) {
+      var grid = document.createElement("div");
+      grid.className = "cr-grid";
+      reviews.forEach(function (review) {
+        grid.appendChild(buildCard(review));
+      });
+      target.appendChild(grid);
+    }
+
+    function renderCarousel(target, reviews) {
+      var wrap = document.createElement("div");
+      wrap.className = "cr-carousel-wrap";
+
+      var controls = document.createElement("div");
+      controls.className = "cr-carousel-controls";
+
+      var prevBtn = document.createElement("button");
+      prevBtn.type = "button";
+      prevBtn.className = "cr-carousel-btn cr-carousel-btn--prev";
+      prevBtn.setAttribute("aria-label", "Previous reviews");
+      prevBtn.textContent = "‹";
+
+      var nextBtn = document.createElement("button");
+      nextBtn.type = "button";
+      nextBtn.className = "cr-carousel-btn cr-carousel-btn--next";
+      nextBtn.setAttribute("aria-label", "Next reviews");
+      nextBtn.textContent = "›";
+
+      controls.appendChild(prevBtn);
+      controls.appendChild(nextBtn);
+
+      var track = document.createElement("div");
+      track.className = "cr-carousel";
+
+      reviews.forEach(function (review) {
+        var card = buildCard(review);
+        card.classList.add("cr-card--carousel");
+        track.appendChild(card);
+      });
+
+      prevBtn.addEventListener("click", function () {
+        track.scrollBy({ left: -300, behavior: "smooth" });
+      });
+      nextBtn.addEventListener("click", function () {
+        track.scrollBy({ left: 300, behavior: "smooth" });
+      });
+
+      wrap.appendChild(controls);
+      wrap.appendChild(track);
+      target.appendChild(wrap);
+    }
+
+    function renderList(target, reviews) {
+      var list = document.createElement("div");
+      list.className = "cr-list";
+
+      reviews.forEach(function (review) {
+        var row = document.createElement("div");
+        row.className = "cr-list-row";
+
+        var starsCol = document.createElement("div");
+        starsCol.className = "cr-list-row__stars";
+        starsCol.appendChild(buildStars(review.rating));
+
+        var contentCol = document.createElement("div");
+        contentCol.className = "cr-list-row__content";
+
+        var body = document.createElement("p");
+        body.className = "cr-list-row__body";
+        body.textContent = review.body || "";
+
+        var author = document.createElement("p");
+        author.className = "cr-list-row__author";
+        author.textContent = review.reviewerName || "Anonymous";
+
+        contentCol.appendChild(body);
+        contentCol.appendChild(author);
+
+        row.appendChild(starsCol);
+        row.appendChild(contentCol);
+        list.appendChild(row);
+      });
+
+      target.appendChild(list);
+    }
+
+    function showMessage(message) {
+      content.innerHTML = "";
+      var p = document.createElement("p");
+      p.className = "cr-empty";
+      p.textContent = message;
+      content.appendChild(p);
+    }
+
+    function showBanner(template) {
+      banner.hidden = false;
+      banner.textContent = "✨ Upgrade to Pro to unlock the " + template + " layout.";
+    }
+
+    function renderTemplate(template, reviews) {
+      content.innerHTML = "";
+
       if (!reviews.length) {
-        grid.innerHTML = '<p class="custom-reviews__empty">No reviews yet.</p>';
+        showMessage("No reviews yet.");
         return;
       }
 
-      grid.className = "custom-reviews__grid";
-      grid.innerHTML = reviews.map((r) => `
-        <div class="custom-reviews__card">
-          <div class="custom-reviews__stars" aria-label="${r.rating} out of 5 stars">
-            ${buildStars(r.rating)}
-          </div>
-          ${r.title ? `<p class="custom-reviews__title"><strong>${r.title}</strong></p>` : ""}
-          <p class="custom-reviews__body">${r.body ?? ""}</p>
-          <p class="custom-reviews__author">${r.reviewerName ?? "Anonymous"}</p>
-        </div>
-      `).join('');
+      if (template === "carousel") {
+        renderCarousel(content, reviews);
+      } else if (template === "list") {
+        renderList(content, reviews);
+      } else {
+        renderGrid(content, reviews);
+      }
     }
 
-    fetch(API_URL)
-      .then((res) => res.json())
-      .then((data) => renderReviews(data.reviews ?? []))
-      .catch(() => {
-        grid.className = "custom-reviews__grid";
-        grid.innerHTML = '<p class="custom-reviews__empty">Could not load reviews right now.</p>';
+    var query = new URLSearchParams({
+      template: settings.template,
+      count: settings.count,
+      sort: settings.sort
+    });
+
+    fetch(settings.proxyUrl + "/api/reviews?" + query.toString())
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (data) {
+        var reviews = data.reviews || [];
+
+        if (data.upgradeRequired === true) {
+          showBanner(settings.template);
+          renderTemplate("grid", reviews);
+        } else {
+          banner.hidden = true;
+          renderTemplate(data.template || settings.template, reviews);
+        }
+      })
+      .catch(function () {
+        showMessage("Could not load reviews right now.");
       });
   })();
 </script>
@@ -119,6 +402,62 @@
 {
   "name": "Custom Reviews",
   "target": "section",
-  "settings": []
+  "settings": [
+    {
+      "type": "select",
+      "id": "template",
+      "label": "Layout",
+      "options": [
+        { "value": "grid", "label": "Grid" },
+        { "value": "carousel", "label": "Carousel (Pro)" },
+        { "value": "list", "label": "List (Pro)" }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "range",
+      "id": "reviews_count",
+      "label": "Number of reviews",
+      "min": 2,
+      "max": 20,
+      "step": 1,
+      "default": 6
+    },
+    {
+      "type": "select",
+      "id": "sort_order",
+      "label": "Sort by",
+      "options": [
+        { "value": "recent", "label": "Most recent" },
+        { "value": "highest", "label": "Highest rated" },
+        { "value": "lowest", "label": "Lowest rated" }
+      ],
+      "default": "recent"
+    },
+    {
+      "type": "color",
+      "id": "star_color",
+      "label": "Star color",
+      "default": "#1a1a1a"
+    },
+    {
+      "type": "color",
+      "id": "card_background",
+      "label": "Card background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "card_border_color",
+      "label": "Card border",
+      "default": "#e5e5e5"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#1a1a1a"
+    }
+  ]
 }
 {% endschema %}
