@@ -11,6 +11,18 @@ automatically_update_urls_on_dev = true
 [webhooks]
 api_version = "2026-07"
 
+  [[webhooks.subscriptions]]
+  topics = ["customers/data_request"]
+  uri = "https://reviews-api-production-10bf.up.railway.app/webhooks/customers/data_request"
+
+  [[webhooks.subscriptions]]
+  topics = ["customers/redact"]
+  uri = "https://reviews-api-production-10bf.up.railway.app/webhooks/customers/redact"
+
+  [[webhooks.subscriptions]]
+  topics = ["shop/redact"]
+  uri = "https://reviews-api-production-10bf.up.railway.app/webhooks/shop/redact"
+
 [access.admin]
 direct_api_mode = "online"
 embedded_app_direct_api_access = true
