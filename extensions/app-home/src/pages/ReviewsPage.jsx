@@ -47,13 +47,18 @@ export default function ReviewsPage() {
     })();
   }, []);
 
-  const applyFilters = (newPage = 1) => {
+  // Accepts explicit rating/sort overrides instead of reading `activeRating`/
+  // `sort` from this closure — those are const bindings from the render that
+  // created this function, so a setState call made right before applyFilters()
+  // in the same event handler hasn't landed yet and would still read the
+  // previous value.
+  const applyFilters = (newPage = 1, { rating = activeRating, sort: sortOverride = sort } = {}) => {
     setPage(newPage);
     fetchReviews(shopDomain, {
       page: newPage,
       limit: 20,
-      sort,
-      rating: activeRating ?? undefined,
+      sort: sortOverride,
+      rating: rating ?? undefined,
       search: search || undefined,
     });
   };
@@ -68,7 +73,7 @@ export default function ReviewsPage() {
               variant={activeRating === r ? 'primary' : 'secondary'}
               onClick={() => {
                 setActiveRating(r);
-                applyFilters();
+                applyFilters(1, {rating: r});
               }}
             >
               {r === null ? 'All' : `${r}★`}
@@ -80,8 +85,9 @@ export default function ReviewsPage() {
           labelAccessibilityVisibility="visible"
           value={sort}
           onChange={(e) => {
-            setSort(e.target.value);
-            applyFilters();
+            const value = e.target.value;
+            setSort(value);
+            applyFilters(1, {sort: value});
           }}
         >
           {SORT_OPTIONS.map((option) => (
