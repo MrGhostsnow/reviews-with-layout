@@ -43,6 +43,8 @@
   data-columns="{{ block.settings.columns }}"
   data-card-spacing="{{ block.settings.card_spacing }}"
   data-product-id="{{ product.id | default: 0 }}"
+  data-show-photos="{{ block.settings.show_photos }}"
+  data-show-avatar="{{ block.settings.show_avatar }}"
 >
   <div class="cr-banner" hidden></div>
 
@@ -197,8 +199,7 @@
   .cr-card-footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
     margin-top: 8px;
   }
 
@@ -259,6 +260,53 @@
   .cr-summary { margin: 0 0 12px; font-size: 14px; color: var(--cr-date-color); }
   .cr-avg { color: var(--cr-star-color); font-weight: 600; }
 
+  /* Photos */
+  .cr-photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 6px;
+  }
+  .cr-photo-link {
+    display: block;
+    width: 72px;
+    height: 72px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .cr-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Avatar */
+  .cr-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* Upgrade hint */
+  .cr-upgrade-hint {
+    font-size: 12px;
+    color: #6B7280;
+    text-align: center;
+    margin-top: 12px;
+    padding: 8px;
+    border: 1px dashed #D1D5DB;
+    border-radius: 6px;
+  }
+
   @media (max-width: 480px) {
     .cr-grid {
       grid-template-columns: 1fr;
@@ -307,25 +355,23 @@
       showReviewTitle: container.dataset.showReviewTitle === "true",
       truncateBody: container.dataset.truncateBody === "true",
       columns: container.dataset.columns,
-      cardSpacing: container.dataset.cardSpacing
+      cardSpacing: container.dataset.cardSpacing,
+      showPhotos: container.dataset.showPhotos === "true",
+      showAvatar: container.dataset.showAvatar === "true"
     };
 
-    // Base colors
+    // Base colors (free)
     container.style.setProperty("--cr-star-color", settings.starColor);
     container.style.setProperty("--cr-card-bg", settings.cardBg);
     container.style.setProperty("--cr-card-border", settings.cardBorder);
     container.style.setProperty("--cr-text-color", settings.textColor);
 
-    // Star settings
+    // Star settings (free)
     container.style.setProperty("--cr-star-size", settings.starSize + "px");
     container.style.setProperty("--cr-star-empty-color", settings.starEmptyColor);
 
-    // Card settings
-    container.style.setProperty("--cr-card-border-radius", settings.cardBorderRadius + "px");
-    container.style.setProperty("--cr-reviewer-name-color", settings.reviewerNameColor);
-    container.style.setProperty("--cr-date-color", settings.dateColor);
-    container.style.setProperty("--cr-body-font-size", settings.bodyFontSize + "px");
-    container.style.setProperty("--cr-name-font-size", settings.nameFontSize + "px");
+    // Pro-gated CSS vars (card border radius, reviewer name/date color, font
+    // sizes) are applied later, once the API response tells us the plan.
 
     function buildStars(rating, style) {
       style = style || "classic";
@@ -406,6 +452,105 @@
       return body;
     }
 
+    function buildPhotos(photos, showPhotos) {
+      if (!showPhotos || !photos || !photos.length) return null;
+
+      var wrap = document.createElement("div");
+      wrap.className = "cr-photos";
+
+      photos.slice(0, 4).forEach(function (url) {
+        var link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.className = "cr-photo-link";
+
+        var img = document.createElement("img");
+        img.src = url;
+        img.alt = "Review photo";
+        img.className = "cr-photo";
+        img.loading = "lazy";
+        img.addEventListener("error", function () {
+          link.style.display = "none";
+        });
+
+        link.appendChild(img);
+        wrap.appendChild(link);
+      });
+
+      return wrap;
+    }
+
+    function buildAvatar(reviewerName, showAvatar) {
+      if (!showAvatar) return null;
+
+      var name = reviewerName || "A";
+      var initials = name
+        .split(" ")
+        .map(function (w) { return w[0]; })
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+
+      var colors = ["#6366F1", "#8B5CF6", "#EC4899", "#14B8A6", "#F59E0B", "#10B981", "#3B82F6"];
+      var colorIndex = name.charCodeAt(0) % colors.length;
+
+      var avatar = document.createElement("span");
+      avatar.className = "cr-avatar";
+      avatar.style.background = colors[colorIndex];
+      avatar.setAttribute("aria-hidden", "true");
+      avatar.textContent = initials;
+      return avatar;
+    }
+
+    function getEffectiveSettings(baseSettings, isPro) {
+      var effective = {};
+      for (var key in baseSettings) {
+        if (Object.prototype.hasOwnProperty.call(baseSettings, key)) {
+          effective[key] = baseSettings[key];
+        }
+      }
+
+      effective.cardBorderRadius = isPro ? baseSettings.cardBorderRadius : "8";
+      effective.cardShadow = isPro ? baseSettings.cardShadow : "none";
+      effective.cardSpacing = isPro ? baseSettings.cardSpacing : "normal";
+      effective.reviewerNameColor = isPro ? baseSettings.reviewerNameColor : baseSettings.textColor;
+      effective.dateColor = isPro ? baseSettings.dateColor : "#9CA3AF";
+      effective.bodyFontSize = isPro ? baseSettings.bodyFontSize : "14";
+      effective.nameFontSize = isPro ? baseSettings.nameFontSize : "13";
+      effective.dateFormat = isPro ? baseSettings.dateFormat : "relative";
+      effective.showAverageRating = isPro ? baseSettings.showAverageRating : false;
+      effective.showReviewCount = isPro ? baseSettings.showReviewCount : false;
+      effective.showVerifiedBadge = isPro ? baseSettings.showVerifiedBadge : false;
+      effective.truncateBody = isPro ? baseSettings.truncateBody : false;
+
+      return effective;
+    }
+
+    function hasProSettingsConfigured(baseSettings) {
+      return baseSettings.cardShadow !== "none"
+        || baseSettings.cardSpacing !== "normal"
+        || baseSettings.dateFormat === "absolute"
+        || baseSettings.showAverageRating === true
+        || baseSettings.truncateBody === true;
+    }
+
+    function showUpgradeHint() {
+      var hint = document.createElement("p");
+      hint.className = "cr-upgrade-hint";
+
+      var link = document.createElement("a");
+      link.href = "#";
+      link.style.color = "inherit";
+      link.textContent = "Upgrade to Pro";
+
+      hint.appendChild(document.createTextNode("✨ "));
+      hint.appendChild(link);
+      hint.appendChild(document.createTextNode(" to unlock advanced styling options."));
+
+      container.appendChild(hint);
+    }
+
     function buildCard(review, cardSettings) {
       var card = document.createElement("div");
       card.className = "cr-card";
@@ -445,8 +590,18 @@
           })();
       card.appendChild(body);
 
+      var photos = buildPhotos(review.photos, cardSettings.showPhotos);
+      if (photos) {
+        card.appendChild(photos);
+      }
+
       var footer = document.createElement("div");
       footer.className = "cr-card-footer";
+
+      var avatar = buildAvatar(review.reviewerName, cardSettings.showAvatar);
+      if (avatar) {
+        footer.appendChild(avatar);
+      }
 
       if (cardSettings.showReviewerName) {
         var author = document.createElement("span");
@@ -620,10 +775,10 @@
       banner.textContent = "✨ Upgrade to Pro to unlock the " + template + " layout.";
     }
 
-    function renderTemplate(template, reviews) {
+    function renderTemplate(template, reviews, effectiveSettings) {
       content.innerHTML = "";
 
-      renderHeader(content, reviews, settings);
+      renderHeader(content, reviews, effectiveSettings);
 
       if (!reviews.length) {
         showMessage("No reviews yet.");
@@ -631,11 +786,11 @@
       }
 
       if (template === "carousel") {
-        renderCarousel(content, reviews, settings);
+        renderCarousel(content, reviews, effectiveSettings);
       } else if (template === "list") {
-        renderList(content, reviews, settings);
+        renderList(content, reviews, effectiveSettings);
       } else {
-        renderGrid(content, reviews, settings);
+        renderGrid(content, reviews, effectiveSettings);
       }
     }
 
@@ -652,13 +807,25 @@
       })
       .then(function (data) {
         var reviews = data.reviews || [];
+        var isPro = !data.upgradeRequired;
+        var effectiveSettings = getEffectiveSettings(settings, isPro);
+
+        container.style.setProperty("--cr-card-border-radius", effectiveSettings.cardBorderRadius + "px");
+        container.style.setProperty("--cr-reviewer-name-color", effectiveSettings.reviewerNameColor);
+        container.style.setProperty("--cr-date-color", effectiveSettings.dateColor);
+        container.style.setProperty("--cr-body-font-size", effectiveSettings.bodyFontSize + "px");
+        container.style.setProperty("--cr-name-font-size", effectiveSettings.nameFontSize + "px");
 
         if (data.upgradeRequired === true) {
           showBanner(settings.template);
-          renderTemplate("grid", reviews);
+          renderTemplate("grid", reviews, effectiveSettings);
         } else {
           banner.hidden = true;
-          renderTemplate(data.template || settings.template, reviews);
+          renderTemplate(data.template || settings.template, reviews, effectiveSettings);
+        }
+
+        if (!isPro && hasProSettingsConfigured(settings)) {
+          showUpgradeHint();
         }
       })
       .catch(function () {
@@ -723,7 +890,7 @@
     {
       "type": "select",
       "id": "card_spacing",
-      "label": "Card spacing",
+      "label": "Card spacing (Pro)",
       "options": [
         { "value": "compact", "label": "Compact" },
         { "value": "normal", "label": "Normal" },
@@ -750,13 +917,13 @@
     {
       "type": "checkbox",
       "id": "show_average_rating",
-      "label": "Show average rating summary",
+      "label": "Show average rating summary (Pro)",
       "default": true
     },
     {
       "type": "checkbox",
       "id": "show_review_count",
-      "label": "Show total review count",
+      "label": "Show total review count (Pro)",
       "default": true
     },
     {
@@ -778,7 +945,7 @@
     {
       "type": "select",
       "id": "date_format",
-      "label": "Date format",
+      "label": "Date format (Pro)",
       "options": [
         { "value": "relative", "label": "Relative (3 days ago)" },
         { "value": "absolute", "label": "Absolute (Aug 15, 2026)" }
@@ -788,7 +955,7 @@
     {
       "type": "checkbox",
       "id": "show_verified_badge",
-      "label": "Show verified purchase badge",
+      "label": "Show verified purchase badge (Pro)",
       "default": true
     },
     {
@@ -800,9 +967,21 @@
     {
       "type": "checkbox",
       "id": "truncate_body",
-      "label": "Truncate long reviews",
+      "label": "Truncate long reviews (Pro)",
       "info": "Shows a 'Read more' link for long reviews",
       "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "show_photos",
+      "label": "Show review photos",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_avatar",
+      "label": "Show reviewer avatar",
+      "default": true
     },
     {
       "type": "header",
@@ -860,7 +1039,7 @@
     {
       "type": "range",
       "id": "card_border_radius",
-      "label": "Card border radius",
+      "label": "Card border radius (Pro)",
       "min": 0,
       "max": 24,
       "step": 2,
@@ -870,7 +1049,7 @@
     {
       "type": "select",
       "id": "card_shadow",
-      "label": "Card shadow",
+      "label": "Card shadow (Pro)",
       "options": [
         { "value": "none", "label": "None" },
         { "value": "subtle", "label": "Subtle" },
@@ -887,19 +1066,19 @@
     {
       "type": "color",
       "id": "reviewer_name_color",
-      "label": "Reviewer name color",
+      "label": "Reviewer name color (Pro)",
       "default": "#111827"
     },
     {
       "type": "color",
       "id": "date_color",
-      "label": "Date color",
+      "label": "Date color (Pro)",
       "default": "#9CA3AF"
     },
     {
       "type": "range",
       "id": "body_font_size",
-      "label": "Review text size",
+      "label": "Review text size (Pro)",
       "min": 12,
       "max": 18,
       "step": 1,
@@ -909,7 +1088,7 @@
     {
       "type": "range",
       "id": "name_font_size",
-      "label": "Reviewer name size",
+      "label": "Reviewer name size (Pro)",
       "min": 11,
       "max": 16,
       "step": 1,
