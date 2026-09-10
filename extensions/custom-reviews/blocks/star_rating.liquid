@@ -807,7 +807,7 @@
       })
       .then(function (data) {
         var reviews = data.reviews || [];
-        var isPro = !data.upgradeRequired;
+        var isPro = data.plan === "pro";
         var effectiveSettings = getEffectiveSettings(settings, isPro);
 
         container.style.setProperty("--cr-card-border-radius", effectiveSettings.cardBorderRadius + "px");
