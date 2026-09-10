@@ -536,17 +536,12 @@
     }
 
     function showUpgradeHint() {
+      var shopDomain = container.dataset.proxyUrl?.replace("https://", "").split("/")[0] || "";
+      var upgradeUrl = "https://" + shopDomain + "/admin/apps/reviews-with-layout";
+
       var hint = document.createElement("p");
       hint.className = "cr-upgrade-hint";
-
-      var link = document.createElement("a");
-      link.href = "#";
-      link.style.color = "inherit";
-      link.textContent = "Upgrade to Pro";
-
-      hint.appendChild(document.createTextNode("✨ "));
-      hint.appendChild(link);
-      hint.appendChild(document.createTextNode(" to unlock advanced styling options."));
+      hint.innerHTML = "✨ <a href=\"" + upgradeUrl + "\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Upgrade to Pro</a> to unlock advanced styling options.";
 
       container.appendChild(hint);
     }
@@ -824,7 +819,7 @@
           renderTemplate(data.template || settings.template, reviews, effectiveSettings);
         }
 
-        if (!isPro && hasProSettingsConfigured(settings)) {
+        if (!isPro && hasProSettingsConfigured(settings) && window.Shopify?.designMode) {
           showUpgradeHint();
         }
       })
