@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "623aca72aa452f99082931ffc20d92a9"
+client_id = "57086c819ef5dbe6c9fb7500ab45ee88"
 name = "reviews-with-layout"
 application_url = "https://shopify.dev/apps/default-app-home"
 embedded = true
