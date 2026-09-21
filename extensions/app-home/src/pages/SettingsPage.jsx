@@ -240,11 +240,9 @@ export default function SettingsPage() {
             Upgrade to Pro for $11.99/month to unlock Carousel and List layouts, unlimited reviews, and
             priority support. Includes a 7-day free trial.
           </s-paragraph>
-          <s-button-group>
-            <s-button variant="primary" onClick={handleUpgrade} loading={upgrading}>
-              Upgrade to Pro — $11.99/month
-            </s-button>
-          </s-button-group>
+          <s-button variant="primary" onClick={handleUpgrade} loading={upgrading}>
+            Upgrade to Pro — $11.99/month
+          </s-button>
           {upgradeError && (
             <s-banner tone="critical" heading="Couldn't start upgrade">
               {upgradeError}
