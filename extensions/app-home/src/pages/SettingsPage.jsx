@@ -6,7 +6,14 @@ import {
   forceSync,
 } from '../api/onboarding';
 import {updateSyncInterval} from '../api/admin';
+import {upgradeToPro} from '../api/billing';
 import {formatRelativeTime, fetchShopDomain} from '../utils/format';
+
+const BILLING_BANNERS = {
+  success: {tone: 'success', heading: "You're on Pro", message: 'Carousel and List layouts are now unlocked.'},
+  cancelled: {tone: 'warning', heading: 'Upgrade cancelled', message: "You're still on the Free plan."},
+  error: {tone: 'critical', heading: "Couldn't confirm upgrade", message: 'Please try again from Settings.'},
+};
 
 const SYNC_INTERVAL_OPTIONS = [
   {value: '60', label: 'Every hour'},
@@ -27,6 +34,11 @@ export default function SettingsPage() {
   const [syncInterval, setSyncInterval] = useState('60');
   const [savingInterval, setSavingInterval] = useState(false);
   const [intervalSaved, setIntervalSaved] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+  const [upgradeError, setUpgradeError] = useState(null);
+  const [billingBanner] = useState(
+    () => BILLING_BANNERS[new URLSearchParams(window.location.search).get('billing')] ?? null
+  );
 
   const loadStatus = async (domain) => {
     const result = await getOnboardingStatus(domain);
@@ -97,6 +109,25 @@ export default function SettingsPage() {
     }
   };
 
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    setUpgradeError(null);
+    try {
+      const data = await upgradeToPro();
+      if (data.confirmationUrl) {
+        // Full-page navigation out of the iframe to Shopify's billing
+        // confirmation screen — it redirects back via returnUrl once the
+        // merchant approves or declines.
+        window.open(data.confirmationUrl, '_top');
+      } else {
+        throw new Error('No confirmation URL returned');
+      }
+    } catch (err) {
+      setUpgradeError(err.message || 'Could not start the upgrade');
+      setUpgrading(false);
+    }
+  };
+
   if (phase === 'loading') {
     return (
       <s-page heading="Settings">
@@ -111,6 +142,11 @@ export default function SettingsPage() {
 
   return (
     <s-page heading="Settings">
+      {billingBanner && (
+        <s-banner tone={billingBanner.tone} heading={billingBanner.heading}>
+          {billingBanner.message}
+        </s-banner>
+      )}
       {phase === 'connected' && status ? (
         <s-section heading="Judge.me integration">
           <s-stack direction="inline" gap="small" alignItems="center">
@@ -196,14 +232,31 @@ export default function SettingsPage() {
         </s-section>
       )}
 
-      <s-section heading="Your plan">
-        <s-badge tone={plan === 'pro' ? 'success' : 'neutral'}>{plan === 'pro' ? 'Pro' : 'Free'}</s-badge>
-        <s-paragraph>Included in Free: Grid layout, basic customization, sync up to 100 reviews.</s-paragraph>
-        <s-paragraph>Upgrade to Pro for: Carousel and List layouts, unlimited reviews, priority support.</s-paragraph>
-        <s-button variant="plain" disabled>
-          Upgrade to Pro
-        </s-button>
-      </s-section>
+      {plan === 'free' ? (
+        <s-section heading="Your plan">
+          <s-badge tone="neutral">Free plan</s-badge>
+          <s-paragraph>Included in Free: Grid layout, basic customization, sync up to 100 reviews.</s-paragraph>
+          <s-paragraph>
+            Upgrade to Pro for $11.99/month to unlock Carousel and List layouts, unlimited reviews, and
+            priority support. Includes a 7-day free trial.
+          </s-paragraph>
+          <s-button-group>
+            <s-button variant="primary" onClick={handleUpgrade} loading={upgrading}>
+              Upgrade to Pro — $11.99/month
+            </s-button>
+          </s-button-group>
+          {upgradeError && (
+            <s-banner tone="critical" heading="Couldn't start upgrade">
+              {upgradeError}
+            </s-banner>
+          )}
+        </s-section>
+      ) : (
+        <s-section heading="Your plan">
+          <s-badge tone="success">Pro plan</s-badge>
+          <s-paragraph>You have access to all FlexReviews features.</s-paragraph>
+        </s-section>
+      )}
     </s-page>
   );
 }
