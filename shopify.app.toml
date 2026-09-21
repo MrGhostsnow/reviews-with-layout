@@ -26,6 +26,15 @@ embedded_app_direct_api_access = true
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_products,write_app_proxy"
+# Explicit false so new installs (and reinstalls) go through the modern OAuth
+# grant and get an expiring offline token via token exchange, instead of the
+# legacy grant that issues a non-expiring one. This app's remote config
+# predates this setting, so it was defaulting to the legacy flow on
+# Shopify's side even with no key present locally — confirmed by production
+# logs: token exchange kept returning hasExpiresIn: false even after a full
+# uninstall+reinstall of the app on the shop. Requires `shopify app deploy`
+# to actually take effect (this file alone isn't read by Shopify's servers).
+use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
