@@ -114,7 +114,11 @@ export default function SettingsPage() {
     setUpgradeError(null);
     try {
       const data = await upgradeToPro();
-      if (data.confirmationUrl) {
+      if (data.pricingUrl) {
+        // App uses Shopify App Pricing — send the merchant to Shopify's
+        // hosted plan selection page instead of a Billing API charge.
+        window.open(data.pricingUrl, '_top');
+      } else if (data.confirmationUrl) {
         // Full-page navigation out of the iframe to Shopify's billing
         // confirmation screen — it redirects back via returnUrl once the
         // merchant approves or declines.
