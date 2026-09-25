@@ -14,11 +14,13 @@ export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [recentReviews, setRecentReviews] = useState([]);
   const [connected, setConnected] = useState(null); // null = loading
+  const [plan, setPlan] = useState('free');
   const [syncing, setSyncing] = useState(false);
 
   const load = async (domain) => {
     const status = await getOnboardingStatus(domain);
     setConnected(status.connected);
+    setPlan(status.plan === 'pro' ? 'pro' : 'free');
     if (status.connected) {
       const [s, r] = await Promise.all([
         getAdminStats(domain),
@@ -147,8 +149,8 @@ export default function DashboardPage() {
       <s-section>
         <s-stack direction="inline" gap="small" alignItems="center">
           <s-badge tone="success">Connected</s-badge>
-          <s-badge tone={stats?.plan === 'pro' ? 'success' : 'neutral'}>
-            {stats?.plan === 'pro' ? 'Pro plan' : 'Free plan'}
+          <s-badge tone={plan === 'pro' ? 'success' : 'neutral'}>
+            {plan === 'pro' ? 'Pro plan' : 'Free plan'}
           </s-badge>
         </s-stack>
         <s-paragraph>
