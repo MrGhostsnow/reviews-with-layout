@@ -2,7 +2,7 @@
 
 client_id = "57086c819ef5dbe6c9fb7500ab45ee88"
 name = "FlexReviews"
-application_url = "https://shopify.dev/apps/default-app-home"
+application_url = "https://reviews-api-production-10bf.up.railway.app"
 embedded = true
 
 [build]
@@ -37,7 +37,10 @@ scopes = "write_products,write_app_proxy"
 use_legacy_install_flow = false
 
 [auth]
-redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+redirect_urls = [
+  "https://reviews-api-production-10bf.up.railway.app/api/auth/callback",
+  "https://reviews-api-production-10bf.up.railway.app/api/billing/confirm"
+]
 
 [metaobjects.app.faq]
 name = "FAQ"
