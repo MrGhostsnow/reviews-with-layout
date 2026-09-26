@@ -21,6 +21,7 @@
   data-card-border="{{ block.settings.card_border_color }}"
   data-text-color="{{ block.settings.text_color }}"
   data-proxy-url="{{ shop.url }}/apps/reviews"
+  data-store-handle="{{ shop.permanent_domain | remove: '.myshopify.com' }}"
   data-star-size="{{ block.settings.star_size }}"
   data-star-empty-color="{{ block.settings.star_empty_color }}"
   data-star-style="{{ block.settings.star_style }}"
@@ -536,8 +537,10 @@
     }
 
     function showUpgradeHint() {
-      var shopDomain = container.dataset.proxyUrl?.replace("https://", "").split("/")[0] || "";
-      var upgradeUrl = "https://" + shopDomain + "/admin/apps/reviews-with-layout";
+      // Shopify App Pricing plan selection page. Uses the permanent
+      // .myshopify.com handle — shop.url can be a custom storefront domain.
+      var upgradeUrl = "https://admin.shopify.com/store/" + container.dataset.storeHandle
+        + "/charges/flexreviews/pricing_plans";
 
       var hint = document.createElement("p");
       hint.className = "cr-upgrade-hint";
