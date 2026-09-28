@@ -68,7 +68,7 @@ type = "metaobject_reference<$app:faq>"
   admin = "merchant_read_write"
 
 [sidekick]
-extensions_summary = "Read FAQ entries stored in the app"
+extensions_summary = "Read review data and ratings for store products"
 
 [app_proxy]
 url = "https://reviews-api-production-10bf.up.railway.app"
